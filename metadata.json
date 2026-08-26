@@ -1,0 +1,6 @@
+{
+  "name": "Harmony Notes",
+  "description": "An end-to-end encrypted personal hub for notes, task routines, self-challenges, and real-time AI coaching.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
