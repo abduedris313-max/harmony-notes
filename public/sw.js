@@ -1,15 +1,17 @@
 // Harmony Notes Service Worker - PWA Offline Caching
 const CACHE_NAME = 'harmony-notes-v1';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll(STATIC_ASSETS).catch((err) => {
+        console.warn('Pre-caching non-fatal warning:', err);
+      });
     })
   );
   self.skipWaiting();

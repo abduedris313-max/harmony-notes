@@ -11,6 +11,15 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
 jobs:
   validate-and-build:
     name: Build & Verify Production Applet
@@ -42,36 +51,46 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: npm run build
 
+      - name: Prepare GitHub Pages Static Files
+        run: |
+          # Disable Jekyll processing for GitHub Pages so all assets are served directly
+          touch dist/.nojekyll
+          # Copy index.html to 404.html for client-side SPA fallback
+          cp dist/index.html dist/404.html
+          echo "GitHub Pages compatibility files (.nojekyll, 404.html) prepared."
+
       - name: Verify Build Output
         run: |
           test -d dist || { echo "Missing dist directory"; exit 1; }
           test -f dist/index.html || { echo "Missing dist/index.html"; exit 1; }
+          test -f dist/404.html || { echo "Missing dist/404.html"; exit 1; }
+          test -f dist/.nojekyll || { echo "Missing dist/.nojekyll"; exit 1; }
           test -f dist/server.cjs || { echo "Missing dist/server.cjs"; exit 1; }
           echo "Production artifacts verified successfully."
 
-      - name: Upload Production Artifacts
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+
+      - name: Upload Generic Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: production-build
           path: dist/
           retention-days: 7
 
-  deploy:
-    name: Deploy to Cloud Environment
+  deploy-pages:
+    name: Deploy to GitHub Pages
     needs: validate-and-build
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: production-build
-          path: dist/
-
-      - name: Verify Deployment Health Readiness
-        run: |
-          echo "Harmony Notes deployment bundle is ready for live traffic."
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true

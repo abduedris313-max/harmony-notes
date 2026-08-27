@@ -133,7 +133,13 @@ service cloud.firestore {
 The `.github/workflows/deploy.yml` pipeline automatically verifies every pull request and push:
 1. **Type Checking & Linting**: Runs `npm run lint` (`tsc --noEmit`).
 2. **Production Bundle**: Runs `npm run build` compiling client assets to `dist/` and bundling the backend to `dist/server.cjs` via `esbuild`.
-3. **Artifact Retention**: Stores release bundles for verified deployment.
+3. **GitHub Pages Deployment**: Generates `.nojekyll` and `404.html` SPA routing fallbacks, uploading assets directly via `@actions/deploy-pages`.
+4. **Artifact Retention**: Stores release bundles for verified deployment.
+
+### Enabling GitHub Pages in your Repository
+1. In your GitHub repository, navigate to **Settings** > **Pages**.
+2. Under **Build and deployment** > **Source**, select **GitHub Actions**.
+3. Push to `main` (or trigger the workflow manually under the **Actions** tab); the site will deploy live at `https://<username>.github.io/<repo-name>/`.
 
 ---
 

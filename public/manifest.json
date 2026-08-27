@@ -2,20 +2,20 @@
   "name": "Harmony Notes - Encrypted Hub & AI Coach",
   "short_name": "Harmony",
   "description": "An end-to-end encrypted personal hub for notes, task routines, self-challenges, and real-time AI coaching.",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#0A84FF",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -27,22 +27,22 @@
       "name": "Quick Note",
       "short_name": "Note",
       "description": "Create an encrypted note",
-      "url": "/#notes",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "url": "./#notes",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Daily Checklist",
       "short_name": "Tasks",
       "description": "View daily tasks & routines",
-      "url": "/#tasks",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "url": "./#tasks",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Active Challenges",
       "short_name": "Challenges",
       "description": "Track self-challenges",
-      "url": "/#challenges",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "url": "./#challenges",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
