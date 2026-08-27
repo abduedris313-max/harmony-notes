@@ -2,14 +2,23 @@ import express from "express";
 import path from "path";
 import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel, Type } from "@google/genai";
 
 dotenv.config();
 
 const PORT = 3000;
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
+
+// Security & Caching Headers for API Routes
+app.use("/api", (req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  next();
+});
 
 // Lazy-loaded Gemini AI client to prevent startup crashes if key is initially missing.
 let aiClient: GoogleGenAI | null = null;
@@ -28,6 +37,19 @@ function getAIClient(): GoogleGenAI {
 // -------------------------------------------------------------------------
 // SERVER-SIDE API ENDPOINTS (Protected from client inspection)
 // -------------------------------------------------------------------------
+
+/**
+ * Health check endpoint for container orchestrators (Cloud Run, Kubernetes)
+ */
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    timestamp: Date.now(),
+    uptime: process.uptime(),
+    version: "1.0.0",
+    hasApiKey: Boolean(process.env.GEMINI_API_KEY),
+  });
+});
 
 /**
  * Endpoint for Chat with Harmony AI (supports both Pro and Flash-lite)
@@ -188,6 +210,108 @@ ${noteContent}
   } catch (error: any) {
     console.error("Error in /api/analyze-note:", error);
     res.status(500).json({ error: error.message || "Failed to analyze note" });
+  }
+});
+
+/**
+ * Endpoint to analyze user task completion patterns and suggest new daily routines.
+ * Uses gemini-3.7-flash to discover behavioral patterns and craft balanced routine recommendations.
+ */
+app.post("/api/suggest-routines", async (req, res) => {
+  try {
+    const { tasks = [], routines = [], stats = {} } = req.body;
+
+    const ai = getAIClient();
+
+    const tasksSummary = (tasks as any[]).map((t) => ({
+      title: t.title,
+      category: t.category || "General",
+      streak: t.streak || 0,
+      completedToday: Boolean(t.completed),
+      completedDatesCount: (t.completedDates || []).length,
+      dueTime: t.dueTime || "None",
+      isRoutineLinked: Boolean(t.routineId)
+    }));
+
+    const routinesSummary = (routines as any[]).map((r) => ({
+      title: r.title,
+      frequency: r.frequency,
+      time: r.time || "None"
+    }));
+
+    const prompt = `You are an expert productivity and behavioral routine optimization coach.
+Analyze the user's task completion patterns, category balance, timing distributions, and consistency streaks below:
+
+Current Tasks & History:
+${JSON.stringify(tasksSummary, null, 2)}
+
+Existing Routine Templates:
+${JSON.stringify(routinesSummary, null, 2)}
+
+Activity Stats:
+${JSON.stringify(stats, null, 2)}
+
+Provide:
+1. "insights": An array of 2 to 4 concise, encouraging analytical observations regarding their productivity habits (e.g. category balance, streak strengths, timing bottlenecks, or missing wellness/focus windows).
+2. "patternSummary": A 1-2 sentence high-level summary of their overall daily workflow pattern.
+3. "suggestions": A list of 2 to 4 actionable, high-impact routine templates designed to complement their existing habits and fill behavioral gaps. Each routine should include:
+   - "title": Concise, motivating routine title (e.g., "Post-Work Mindful Winddown", "Deep Focus Morning Block", "Hydration & Mobility Reset")
+   - "category": One of "Personal", "Work", "Health", "Mindfulness", "Study", "General"
+   - "frequency": "daily" or "weekly"
+   - "time": Recommended time in 24-hour HH:MM format (e.g. "07:30", "14:00", "21:00")
+   - "reason": Clear 1-sentence behavioral explanation of why this fits their current pattern.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.7-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            patternSummary: {
+              type: Type.STRING,
+              description: "A 1-2 sentence high-level summary of the user's workflow pattern."
+            },
+            insights: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.STRING
+              },
+              description: "2-4 analytical observations on task completion patterns."
+            },
+            suggestions: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  category: { 
+                    type: Type.STRING,
+                    description: "Personal, Work, Health, Mindfulness, Study, or General"
+                  },
+                  frequency: { 
+                    type: Type.STRING,
+                    description: "daily or weekly"
+                  },
+                  time: { type: Type.STRING, description: "HH:MM format" },
+                  reason: { type: Type.STRING }
+                },
+                required: ["title", "category", "frequency", "time", "reason"]
+              },
+              description: "2-4 recommended routine templates."
+            }
+          },
+          required: ["patternSummary", "insights", "suggestions"]
+        }
+      }
+    });
+
+    const responseText = response.text || "{}";
+    res.json(JSON.parse(responseText.trim()));
+  } catch (error: any) {
+    console.error("Error in /api/suggest-routines:", error);
+    res.status(500).json({ error: error.message || "Failed to analyze patterns and suggest routines" });
   }
 });
 

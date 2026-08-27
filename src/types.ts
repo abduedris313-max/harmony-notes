@@ -10,12 +10,15 @@ export interface Note {
   color?: string;
 }
 
+export type TaskCategory = 'Personal' | 'Work' | 'Health' | 'Mindfulness' | 'Study' | 'General';
+
 export interface Task {
   id: string;
   title: string;
   completed: boolean;
   dueDate?: string; // YYYY-MM-DD
   dueTime?: string; // HH:MM
+  category?: TaskCategory; // Task organization category
   routineId?: string; // Links task to a routine
   createdAt: number;
   completedDates?: string[]; // YYYY-MM-DD completion logs

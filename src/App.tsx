@@ -20,6 +20,7 @@ import {
 } from "firebase/firestore";
 
 import { Note, Task, Routine, Challenge, Message, BackupData } from "./types";
+import confetti from "canvas-confetti";
 
 export default function App() {
   const [user, setUser] = React.useState<any>(null);
@@ -176,6 +177,7 @@ export default function App() {
   };
 
   // Handle Task Checkbox Completion & Streak Logger
+  // Handle Task Completion / Toggle Check
   const handleCheckTask = async (id: string, date: string) => {
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
@@ -190,6 +192,44 @@ export default function App() {
     } else {
       // Check
       nextCompletedDates.push(date);
+      
+      // Check if all today's tasks are now completed
+      const todayTasks = tasks.filter(t => t.dueDate === date || t.routineId);
+      const willBeAllCompleted = todayTasks.length > 0 && todayTasks.every(t => 
+        t.id === id ? true : (t.completed || (t.completedDates && t.completedDates.includes(date)))
+      );
+
+      if (willBeAllCompleted) {
+        // Multi-stage grand celebration confetti for 100% daily clearing
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ["#0A84FF", "#30D158", "#FF9F0A", "#BF5AF2", "#FF375F"]
+        });
+        setTimeout(() => {
+          confetti({
+            particleCount: 50,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 }
+          });
+          confetti({
+            particleCount: 50,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 }
+          });
+        }, 250);
+      } else {
+        // Subtle motivational burst
+        confetti({
+          particleCount: 30,
+          spread: 50,
+          origin: { y: 0.8 },
+          colors: ["#30D158", "#0A84FF", "#64D2FF"]
+        });
+      }
     }
 
     // Streak calculation
@@ -229,6 +269,7 @@ export default function App() {
       completed: taskInput.completed,
       dueDate: taskInput.dueDate,
       dueTime: taskInput.dueTime,
+      category: taskInput.category || "General",
       routineId: taskInput.routineId,
       streak: taskInput.streak,
       createdAt: now,
@@ -352,6 +393,14 @@ export default function App() {
       progress: nextProg,
       lastCheckInDate: date,
     };
+
+    // Trigger inspiring iOS confetti burst
+    confetti({
+      particleCount: 60,
+      spread: 65,
+      origin: { y: 0.7 },
+      colors: ["#BF5AF2", "#FF9F0A", "#0A84FF", "#30D158", "#FF375F"]
+    });
 
     if (user?.uid === "guest-offline-user") {
       const updatedList = challenges.map((c) => (c.id === id ? { ...c, ...updated } : c));
