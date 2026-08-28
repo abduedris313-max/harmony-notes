@@ -1,5 +1,5 @@
 import React from "react";
-import { Shield, KeyRound, ArrowRight, Chrome, Mail, AlertTriangle } from "lucide-react";
+import { Shield, KeyRound, ArrowRight, Chrome, Mail, AlertTriangle, Copy, Check, ExternalLink, Globe } from "lucide-react";
 import { signInWithPopup, signInAnonymously } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
 import { deriveEncryptionKey, encryptText, decryptText } from "../crypto";
@@ -15,8 +15,10 @@ export default function AuthScreen({ onAuthenticated, darkMode }: AuthScreenProp
   const [passphrase, setPassphrase] = React.useState('');
   const [confirmPassphrase, setConfirmPassphrase] = React.useState('');
   const [errorMessage, setErrorMessage] = React.useState('');
+  const [unauthorizedDomain, setUnauthorizedDomain] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [showIframeWarning, setShowIframeWarning] = React.useState(false);
+  const [copiedDomain, setCopiedDomain] = React.useState(false);
 
   React.useEffect(() => {
     // Detect if we are in an iframe (which often blocks Firebase OAuth popup)
@@ -28,13 +30,20 @@ export default function AuthScreen({ onAuthenticated, darkMode }: AuthScreenProp
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setErrorMessage('');
+    setUnauthorizedDomain(null);
     try {
       const result = await signInWithPopup(auth, googleProvider);
       handleUserAuthenticated(result.user);
     } catch (err: any) {
       console.error("Popup signin error", err);
-      if (err.code === "auth/popup-blocked" || err.code === "auth/internal-error" || err.code === "auth/network-request-failed") {
-        setErrorMessage("OAuth popup blocked or restricted by the browser sandbox. Please use Anonymous/Offline Session below.");
+      if (err.code === "auth/unauthorized-domain") {
+        const currentHost = window.location.hostname || "current domain";
+        setUnauthorizedDomain(currentHost);
+        setErrorMessage(
+          `Domain "${currentHost}" is not yet authorized in your Firebase Authentication console.`
+        );
+      } else if (err.code === "auth/popup-blocked" || err.code === "auth/internal-error" || err.code === "auth/network-request-failed") {
+        setErrorMessage("OAuth popup was blocked or restricted by the browser sandbox. You can use Anonymous/Offline Session below.");
       } else {
         setErrorMessage(err.message || "Failed to sign in with Google.");
       }
@@ -175,8 +184,54 @@ export default function AuthScreen({ onAuthenticated, darkMode }: AuthScreenProp
           )}
 
           {errorMessage && (
-            <div className="w-full mb-4 p-3 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 text-xs font-semibold leading-relaxed">
-              {errorMessage}
+            <div className="w-full mb-4 p-3 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 text-xs font-semibold leading-relaxed">
+              <p>{errorMessage}</p>
+              
+              {unauthorizedDomain && (
+                <div className={`mt-3 p-3 rounded-xl border text-[11px] font-normal space-y-2.5 ${
+                  darkMode ? "bg-black/40 border-rose-500/30 text-stone-200" : "bg-white/80 border-rose-200 text-stone-700"
+                }`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-[10px] uppercase tracking-wider text-[#0A84FF] flex items-center gap-1">
+                      <Globe className="w-3 h-3" />
+                      Domain to Whitelist
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(unauthorizedDomain);
+                        setCopiedDomain(true);
+                        setTimeout(() => setCopiedDomain(false), 2000);
+                      }}
+                      className="px-2 py-0.5 rounded-md bg-[#0A84FF]/15 hover:bg-[#0A84FF]/25 text-[#0A84FF] text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all"
+                    >
+                      {copiedDomain ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedDomain ? "Copied!" : "Copy Domain"}</span>
+                    </button>
+                  </div>
+
+                  <code className="block p-1.5 rounded-lg bg-black/20 font-mono text-[10px] text-[#0A84FF] select-all break-all">
+                    {unauthorizedDomain}
+                  </code>
+
+                  <ol className="list-decimal pl-4 space-y-1 text-[10px] leading-snug opacity-90">
+                    <li>Open <strong>Firebase Console</strong> &gt; <strong>Authentication</strong>.</li>
+                    <li>Go to the <strong>Settings</strong> tab &gt; <strong>Authorized domains</strong>.</li>
+                    <li>Click <strong>Add domain</strong> and paste the domain above.</li>
+                  </ol>
+
+                  <div className="pt-1 border-t border-rose-500/20">
+                    <button
+                      type="button"
+                      onClick={handleAnonymousSignIn}
+                      className="w-full py-1.5 px-2.5 bg-[#0A84FF] hover:bg-[#409CFF] text-white rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 shadow-sm transition-all cursor-pointer"
+                    >
+                      <span>Continue via Secure Local Vault Mode</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

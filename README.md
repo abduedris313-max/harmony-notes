@@ -143,7 +143,28 @@ The `.github/workflows/deploy.yml` pipeline automatically verifies every pull re
 
 ---
 
-## 9. Getting Started & Local Development
+## 9. Firebase Authentication: Authorized Domains Setup
+
+If you see `Firebase: Error (auth/unauthorized-domain)` when attempting to log in via Google on GitHub Pages, Cloud Run, or custom domains:
+
+Firebase Authentication restricts OAuth popups to domains explicitly registered in your Firebase project.
+
+### How to Authorize your Domain:
+1. Go to the [Firebase Console](https://console.firebase.google.com/).
+2. Select your project (e.g. `concrete-lead-kc9s2` or your custom project).
+3. In the left navigation menu, click **Build** &gt; **Authentication**.
+4. Go to the **Settings** tab (top menu bar) &gt; **Authorized domains**.
+5. Click **Add domain**.
+6. Enter your domain:
+   - For GitHub Pages: `<your-username>.github.io` (e.g. `abdutuahir.github.io`)
+   - For Cloud Run / Custom domain: your specific domain name (e.g. `ais-dev-....run.app` or `yourdomain.com`).
+7. Click **Add**. Google Sign-In will immediately work without redeploying.
+
+*Note: Harmony Notes also includes a built-in zero-configuration **Anonymous Guest Session** / **Local Vault Mode** that operates entirely offline with full client-side AES-GCM encryption if OAuth is unavailable.*
+
+---
+
+## 10. Getting Started & Local Development
 
 ### Prerequisites
 * Node.js 20+
