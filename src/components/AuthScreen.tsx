@@ -1,8 +1,9 @@
 import React from "react";
-import { Shield, KeyRound, ArrowRight, Chrome, Mail, AlertTriangle, Copy, Check, ExternalLink, Globe } from "lucide-react";
+import { Shield, KeyRound, ArrowRight, Mail, AlertTriangle, Copy, Check, ExternalLink, Globe } from "lucide-react";
 import { signInWithPopup, signInAnonymously } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
 import { deriveEncryptionKey, encryptText, decryptText } from "../crypto";
+import { CDN_ASSETS } from "../constants/cdnAssets";
 
 interface AuthScreenProps {
   onAuthenticated: (user: any, cryptoKey: CryptoKey, phrase: string) => void;
@@ -163,8 +164,14 @@ export default function AuthScreen({ onAuthenticated, darkMode }: AuthScreenProp
         <div className={`w-full max-w-sm p-8 rounded-3xl border shadow-2xl flex flex-col items-center ${
           darkMode ? "bg-[#1C1C1E]/60 border-[#38383A] backdrop-blur-xl" : "bg-white border-stone-200"
         }`}>
-          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#0A84FF] to-[#5E5CE6] flex items-center justify-center mb-6 shadow-xl shadow-[#0A84FF]/20">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#0A84FF] to-[#5E5CE6] flex items-center justify-center mb-6 shadow-xl shadow-[#0A84FF]/20 overflow-hidden p-3.5">
+            <img 
+              src={CDN_ASSETS.appLogoWhite} 
+              alt="Harmony Notes" 
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+            />
           </div>
 
           <h2 className="text-2xl font-bold tracking-tight text-center mb-2">Harmony Notes</h2>
@@ -239,13 +246,19 @@ export default function AuthScreen({ onAuthenticated, darkMode }: AuthScreenProp
             <button
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className={`w-full py-3 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 border transition-all ${
+              className={`w-full py-3 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2.5 border transition-all ${
                 darkMode 
                   ? "bg-[#1C1C1E] hover:bg-[#323234]/50 border-[#38383A] text-stone-200" 
                   : "bg-white hover:bg-stone-50 border-stone-200 text-stone-700 shadow-sm"
               }`}
             >
-              <Chrome className="w-4 h-4 text-[#0A84FF]" />
+              <img 
+                src={CDN_ASSETS.googleLogo} 
+                alt="Google" 
+                className="w-4 h-4 object-contain"
+                referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
+              />
               {loading ? "Connecting..." : "Sign in with Google"}
             </button>
 

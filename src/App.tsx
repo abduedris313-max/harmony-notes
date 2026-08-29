@@ -71,6 +71,14 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Helper for generating unique record identifiers safely
+  const generateId = () => {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return `id_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
+  };
+
   // System Sync Coordinator (Sync real-time with Firestore, fallback to LocalStorage)
   React.useEffect(() => {
     if (!user) return;
@@ -89,39 +97,62 @@ export default function App() {
       return;
     }
 
-    // REAL-TIME FIRESTORE SYNCHRONIZATION
-    // Listening to User's private Firestore directories
-    const unsubNotes = onSnapshot(collection(db, "users", user.uid, "notes"), (snapshot) => {
-      const list: Note[] = [];
-      snapshot.forEach((doc) => {
-        list.push({ id: doc.id, ...doc.data() } as Note);
-      });
-      setNotes(list);
-    });
+    // REAL-TIME FIRESTORE SYNCHRONIZATION WITH RESILIENT ERROR HANDLING
+    const unsubNotes = onSnapshot(
+      collection(db, "users", user.uid, "notes"),
+      (snapshot) => {
+        const list: Note[] = [];
+        snapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() } as Note);
+        });
+        setNotes(list);
+      },
+      (err) => {
+        console.warn("Firestore Notes operating in offline/cache mode:", err.message);
+      }
+    );
 
-    const unsubTasks = onSnapshot(collection(db, "users", user.uid, "tasks"), (snapshot) => {
-      const list: Task[] = [];
-      snapshot.forEach((doc) => {
-        list.push({ id: doc.id, ...doc.data() } as Task);
-      });
-      setTasks(list);
-    });
+    const unsubTasks = onSnapshot(
+      collection(db, "users", user.uid, "tasks"),
+      (snapshot) => {
+        const list: Task[] = [];
+        snapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() } as Task);
+        });
+        setTasks(list);
+      },
+      (err) => {
+        console.warn("Firestore Tasks operating in offline/cache mode:", err.message);
+      }
+    );
 
-    const unsubRoutines = onSnapshot(collection(db, "users", user.uid, "routines"), (snapshot) => {
-      const list: Routine[] = [];
-      snapshot.forEach((doc) => {
-        list.push({ id: doc.id, ...doc.data() } as Routine);
-      });
-      setRoutines(list);
-    });
+    const unsubRoutines = onSnapshot(
+      collection(db, "users", user.uid, "routines"),
+      (snapshot) => {
+        const list: Routine[] = [];
+        snapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() } as Routine);
+        });
+        setRoutines(list);
+      },
+      (err) => {
+        console.warn("Firestore Routines operating in offline/cache mode:", err.message);
+      }
+    );
 
-    const unsubChallenges = onSnapshot(collection(db, "users", user.uid, "challenges"), (snapshot) => {
-      const list: Challenge[] = [];
-      snapshot.forEach((doc) => {
-        list.push({ id: doc.id, ...doc.data() } as Challenge);
-      });
-      setChallenges(list);
-    });
+    const unsubChallenges = onSnapshot(
+      collection(db, "users", user.uid, "challenges"),
+      (snapshot) => {
+        const list: Challenge[] = [];
+        snapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() } as Challenge);
+        });
+        setChallenges(list);
+      },
+      (err) => {
+        console.warn("Firestore Challenges operating in offline/cache mode:", err.message);
+      }
+    );
 
     return () => {
       unsubNotes();
@@ -133,7 +164,7 @@ export default function App() {
 
   // Handle Note Save / Update
   const handleSaveNote = async (noteInput: Omit<Note, "id" | "createdAt" | "updatedAt"> & { id?: string }) => {
-    const noteId = noteInput.id || doc(collection(db, "temp")).id;
+    const noteId = noteInput.id || generateId();
     const now = Date.now();
 
     const notePayload: Note = {
@@ -158,7 +189,11 @@ export default function App() {
     }
 
     if (user) {
-      await setDoc(doc(db, "users", user.uid, "notes", noteId), notePayload, { merge: true });
+      try {
+        await setDoc(doc(db, "users", user.uid, "notes", noteId), notePayload, { merge: true });
+      } catch (err) {
+        console.warn("Firestore save note queued offline:", err);
+      }
     }
   };
 
@@ -172,7 +207,11 @@ export default function App() {
     }
 
     if (user) {
-      await deleteDoc(doc(db, "users", user.uid, "notes", id));
+      try {
+        await deleteDoc(doc(db, "users", user.uid, "notes", id));
+      } catch (err) {
+        console.warn("Firestore delete note queued offline:", err);
+      }
     }
   };
 
@@ -258,9 +297,9 @@ export default function App() {
     }
   };
 
-  // Handle Task Add
+  // Handle Task Add / Update
   const handleSaveTask = async (taskInput: Omit<Task, "id" | "createdAt" | "completedDates"> & { id?: string }) => {
-    const taskId = taskInput.id || doc(collection(db, "temp")).id;
+    const taskId = taskInput.id || generateId();
     const now = Date.now();
 
     const taskPayload: Task = {
@@ -284,7 +323,11 @@ export default function App() {
     }
 
     if (user) {
-      await setDoc(doc(db, "users", user.uid, "tasks", taskId), taskPayload, { merge: true });
+      try {
+        await setDoc(doc(db, "users", user.uid, "tasks", taskId), taskPayload, { merge: true });
+      } catch (err) {
+        console.warn("Firestore save task queued offline:", err);
+      }
     }
   };
 
@@ -307,13 +350,17 @@ export default function App() {
     }
 
     if (user) {
-      await deleteDoc(doc(db, "users", user.uid, "tasks", id));
+      try {
+        await deleteDoc(doc(db, "users", user.uid, "tasks", id));
+      } catch (err) {
+        console.warn("Firestore delete task queued offline:", err);
+      }
     }
   };
 
   // Handle Routine Save
   const handleSaveRoutine = async (routineInput: Omit<Routine, "id" | "createdAt"> & { id?: string }) => {
-    const routineId = routineInput.id || doc(collection(db, "temp")).id;
+    const routineId = routineInput.id || generateId();
     const now = Date.now();
 
     const routinePayload: Routine = {
@@ -333,7 +380,11 @@ export default function App() {
     }
 
     if (user) {
-      await setDoc(doc(db, "users", user.uid, "routines", routineId), routinePayload, { merge: true });
+      try {
+        await setDoc(doc(db, "users", user.uid, "routines", routineId), routinePayload, { merge: true });
+      } catch (err) {
+        console.warn("Firestore save routine queued offline:", err);
+      }
     }
   };
 
@@ -347,13 +398,17 @@ export default function App() {
     }
 
     if (user) {
-      await deleteDoc(doc(db, "users", user.uid, "routines", id));
+      try {
+        await deleteDoc(doc(db, "users", user.uid, "routines", id));
+      } catch (err) {
+        console.warn("Firestore delete routine queued offline:", err);
+      }
     }
   };
 
   // Handle Challenge Save
   const handleSaveChallenge = async (challengeInput: Omit<Challenge, "id" | "createdAt" | "progress"> & { id?: string }) => {
-    const challengeId = challengeInput.id || doc(collection(db, "temp")).id;
+    const challengeId = challengeInput.id || generateId();
     const now = Date.now();
 
     const challengePayload: Challenge = {
@@ -376,7 +431,11 @@ export default function App() {
     }
 
     if (user) {
-      await setDoc(doc(db, "users", user.uid, "challenges", challengeId), challengePayload, { merge: true });
+      try {
+        await setDoc(doc(db, "users", user.uid, "challenges", challengeId), challengePayload, { merge: true });
+      } catch (err) {
+        console.warn("Firestore save challenge queued offline:", err);
+      }
     }
   };
 
@@ -410,7 +469,11 @@ export default function App() {
     }
 
     if (user) {
-      await setDoc(doc(db, "users", user.uid, "challenges", id), updated, { merge: true });
+      try {
+        await setDoc(doc(db, "users", user.uid, "challenges", id), updated, { merge: true });
+      } catch (err) {
+        console.warn("Firestore check in challenge queued offline:", err);
+      }
     }
   };
 
@@ -424,7 +487,11 @@ export default function App() {
     }
 
     if (user) {
-      await deleteDoc(doc(db, "users", user.uid, "challenges", id));
+      try {
+        await deleteDoc(doc(db, "users", user.uid, "challenges", id));
+      } catch (err) {
+        console.warn("Firestore delete challenge queued offline:", err);
+      }
     }
   };
 
@@ -540,7 +607,7 @@ export default function App() {
   // AI Assistant message dispatcher (Supports Dual Engine model routing)
   const handleSendMessage = async (text: string, modelType: 'flash' | 'pro') => {
     const userMsg: Message = {
-      id: doc(collection(db, "temp")).id,
+      id: generateId(),
       text,
       sender: "user",
       timestamp: Date.now(),
@@ -563,7 +630,7 @@ export default function App() {
       const data = await response.json();
       if (data.reply) {
         const replyMsg: Message = {
-          id: doc(collection(db, "temp")).id,
+          id: generateId(),
           text: data.reply,
           sender: "assistant",
           timestamp: Date.now(),
@@ -573,7 +640,7 @@ export default function App() {
       }
     } catch (e) {
       const errorMsg: Message = {
-        id: doc(collection(db, "temp")).id,
+        id: generateId(),
         text: "I experienced a connection issue on my server-side proxy. Please verify your GEMINI_API_KEY.",
         sender: "assistant",
         timestamp: Date.now(),

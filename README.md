@@ -84,6 +84,7 @@ Harmony Notes follows a clean separation of concerns between client and server:
 ## 4. Mobile-First iOS Design System
 
 * **Visual Design**: High-contrast typography (SF Pro / System fonts), optical borders, and balanced spacing.
+* **CDN-Hosted Assets & Icons**: All brand logos, third-party authentication badges (Google/Apple), PWA shortcut icons, and graphical vectors are served via high-availability global CDNs (jsDelivr, Iconify, Devicons, Twemoji CDN) eliminating local image bloat.
 * **Adaptive Light & Dark Modes**: Deep OLED `#000000` / `#1C1C1E` dark mode palette and clean `#F2F2F7` light mode canvas.
 * **Safe-Area Insets**: Full support for `env(safe-area-inset-top)` and `env(safe-area-inset-bottom)` ensuring perfect layouts on iPhones with Dynamic Islands and Home Indicators.
 

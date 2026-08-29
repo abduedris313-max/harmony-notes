@@ -1,0 +1,90 @@
+{
+  "entities": {
+    "Note": {
+      "title": "Note",
+      "description": "Encrypted user note record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "encryptedContent": { "type": "string" },
+        "iv": { "type": "string" },
+        "tags": { "type": "array" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "isFavorite": { "type": "boolean" },
+        "color": { "type": "string" }
+      },
+      "required": ["id", "title", "encryptedContent", "iv", "createdAt", "updatedAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "User task and routine check item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "dueDate": { "type": "string" },
+        "dueTime": { "type": "string" },
+        "category": { "type": "string" },
+        "routineId": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "completedDates": { "type": "array" },
+        "streak": { "type": "number" }
+      },
+      "required": ["id", "title", "completed", "createdAt", "streak"]
+    },
+    "Routine": {
+      "title": "Routine",
+      "description": "Daily or weekly recurring routine definition",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "frequency": { "type": "string", "enum": ["daily", "weekly"] },
+        "daysOfWeek": { "type": "array" },
+        "time": { "type": "string" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "title", "frequency", "active", "createdAt"]
+    },
+    "Challenge": {
+      "title": "Challenge",
+      "description": "Self-challenge streak and AI coaching progress tracker",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "startDate": { "type": "string" },
+        "durationDays": { "type": "number" },
+        "active": { "type": "boolean" },
+        "progress": { "type": "array" },
+        "category": { "type": "string" },
+        "lastCheckInDate": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "title", "startDate", "durationDays", "active", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/notes/{noteId}": {
+      "schema": "Note",
+      "description": "Private encrypted user notes"
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Private user tasks"
+    },
+    "/users/{userId}/routines/{routineId}": {
+      "schema": "Routine",
+      "description": "Private user recurring routines"
+    },
+    "/users/{userId}/challenges/{challengeId}": {
+      "schema": "Challenge",
+      "description": "Private user self-challenges"
+    }
+  }
+}

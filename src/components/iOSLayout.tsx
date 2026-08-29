@@ -1,4 +1,5 @@
 import React from "react";
+import { CDN_ASSETS } from "../constants/cdnAssets";
 import { 
   FileText, 
   CheckSquare, 
@@ -89,8 +90,14 @@ export default function IOSLayout({
         darkMode ? "bg-[#1C1C1E]/60 border-b border-[#38383A]" : "bg-white/80 border-b border-stone-200"
       } backdrop-blur-md sticky top-0 z-40`}>
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 bg-gradient-to-tr from-[#0A84FF] to-[#5E5CE6] rounded-xl flex items-center justify-center shadow-lg shadow-[#0A84FF]/20">
-            <span className="text-white font-bold text-sm">H</span>
+          <div className="w-9 h-9 bg-gradient-to-tr from-[#0A84FF] to-[#5E5CE6] rounded-xl flex items-center justify-center shadow-lg shadow-[#0A84FF]/20 overflow-hidden p-1.5">
+            <img 
+              src={CDN_ASSETS.appLogoWhite} 
+              alt="Harmony Logo" 
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+            />
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight">Harmony Notes</h1>
